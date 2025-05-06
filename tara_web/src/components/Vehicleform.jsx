@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect,useState } from "react";
 import './Vehicleform.css';
 
 
-function VechicleForm(){
+function VehicleForm({ onAdd,editVehicle, onEditComplete }){
 
     const [vehicleId, setVehicleId] = useState("");
     const [vehicleNo, setVehicleNo] = useState("");
@@ -25,9 +25,33 @@ function VechicleForm(){
     const [likes, setLikes] = useState("0");
     const [mode, setMode] = useState("");
 
+    useEffect(() => {
+        const currentTime = new Date().toISOString().slice(11, 16);
+        if (editVehicle) {
+          setVehicleId(editVehicle.id?.toString() || "");
+          setVehicleNo(editVehicle.vehicle_no || "");
+          setDate(editVehicle.date || new Date().toISOString().slice(0, 10));
+          setFromTime(editVehicle.from_time || currentTime);
+          setToTime(editVehicle.to_time || currentTime);
+          setStartTime(editVehicle.start_time || currentTime);
+          setEndTime(editVehicle.end_time || currentTime);
+          setCurrencySymbol(editVehicle.currency_symbol || "$");
+          setPrice(editVehicle.price?.toString() || "0");
+          setDiscount(editVehicle.discount?.toString() || "0");
+          setFlag1(editVehicle.flag1 || false);
+          setFlag2(editVehicle.flag2 || false);
+          setFlag3(editVehicle.flag3 || false);
+          setStopages(editVehicle.stopages?.toString() || "0");
+          setShare(editVehicle.share?.toString() || "0");
+          setLikes(editVehicle.likes?.toString() || "0");
+          setMode(editVehicle.mode || "");
+        }
+      }, [editVehicle]);
+
     return(
         <div className="vehicle-form">
-            <h2>Add New Vehicle</h2>
+            <h2>{editVehicle ? "Update a Vehicle" : "Add New Vehicle"}</h2>
+
             <div>
                 <label htmlFor="vehicleId">Vehicle ID:</label>
                 <input id="vehicleId" type="text" placeholder="Vehicle ID" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} /><br />
@@ -106,8 +130,12 @@ function VechicleForm(){
             <div>
                 <label htmlFor="mode">Mode:</label>
                 <input id="mode" type="text" placeholder="Mode" value={mode} onChange={(e) => setMode(e.target.value)} /><br />
-            </div><br></br>
-                
+            </div>
+            {editVehicle && (
+                <button onClick={onEditComplete} style={{ marginTop: "10px" }}>
+                    Cancel Edit
+                </button>
+            )}
             <button onClick={() => {
 
                 if (!vehicleId || !vehicleNo) {
@@ -116,7 +144,7 @@ function VechicleForm(){
                 }
                 const vehicleData = {
                     vehicle_no: vehicleNo,
-                    date: date,
+                    date,
                     from_time: fromTime,
                     to_time: toTime,
                     start_time: startTime,
@@ -124,29 +152,63 @@ function VechicleForm(){
                     currency_symbol: currencySymbol,
                     price: parseFloat(price),
                     discount: parseFloat(discount),
-                    flag1: flag1,
-                    flag2: flag2,
-                    flag3: flag3,
+                    flag1,
+                    flag2,
+                    flag3,
                     stopages: parseInt(stopages),
                     share: parseInt(share),
                     likes: parseInt(likes),
-                    mode: mode,
+                    mode,
                     id: vehicleId,
-                };
-
-                fetch('http://localhost:8000/vehicle', {
-                    method: 'POST',
+                  };
+                  
+                  const url = editVehicle
+                    ? `http://localhost:8000/vehicle/${vehicleId}`
+                    : `http://localhost:8000/vehicle`;
+                  
+                  const method = editVehicle ? "PUT" : "POST";
+                  
+                  fetch(url, {
+                    method,
                     headers: {
-                        'Content-Type': 'application/json'
+                      "Content-Type": "application/json",
                     },
-                    body: JSON.stringify(vehicleData)
-                })
-                .then((res) => res.json())
-                .then((data) => console.log('Vehicle added:', data))
-                .catch((err) => console.error('Error:', err));
-            }}>Add Vehicle</button>
+                    body: JSON.stringify(vehicleData),
+                  })
+                    .then((res) => res.json())
+                    .then((data) => {
+                      console.log(editVehicle ? "Vehicle updated:" : "Vehicle added:", data);
+                      
+                      //resetform
+                      setVehicleId("");
+                      setVehicleNo("");
+                      setDate(new Date().toISOString().slice(0, 10));
+                      setFromTime(currentTime);
+                      setToTime(currentTime);
+                      setStartTime(currentTime);
+                      setEndTime(currentTime);
+                      setCurrencySymbol("$");
+                      setPrice("0");
+                      setDiscount("0");
+                      setFlag1(false);
+                      setFlag2(false);
+                      setFlag3(false);
+                      setStopages("0");
+                      setShare("0");
+                      setLikes("0");
+                      setMode("");
+                  
+                      if (onAdd) onAdd();
+                      if (onEditComplete) onEditComplete();
+                    })
+                    .catch((err) => {
+                      console.error("Error:", err);
+                      alert("Failed to submit form");
+                    });
+            
+            }}>{editVehicle ? "Update Vehicle" : "Add Vehicle"}</button>
         </div>
     )
 }
 
-export default VechicleForm;
+export default VehicleForm;

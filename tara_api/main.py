@@ -66,10 +66,12 @@ def update_vehicle(vehicle_id: str,vehicle_input: schemas.VehicleUpdate,db: Sess
 
 @app.delete('/vehicle/{vehicle_id}', status_code=status.HTTP_202_ACCEPTED)
 def delete_vehicle(vehicle_id: str,db: Session=Depends(get_db)):
-    vehicle = db.query(models.Vehicle).get(vehicle_id)
+    vehicle_delete_query = db.query(models.Vehicle).filter(models.Vehicle.id==vehicle_id)
+    vehicle = vehicle_delete_query.first()
+
     if not vehicle:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"vehicle with id = {vehicle_id} NOT found" )
     
-    db.delete(vehicle)
+    vehicle_delete_query.delete()
     db.commit()
     return {"detail":f"vehicle with id = {vehicle_id} Deleted"}
